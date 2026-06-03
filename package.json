@@ -1,0 +1,33 @@
+{
+  "name": "cime-tools",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:tailscale": "vite --host 0.0.0.0 --port 5175",
+    "build": "tsc -b && vite build",
+    "convex": "convex dev",
+    "lint": "tsc --noEmit",
+    "cf:login": "npx wrangler login",
+    "cf:whoami": "npx wrangler whoami",
+    "pages:create": "npx wrangler pages project create cime-tools --production-branch main --compatibility-date 2026-06-03",
+    "deploy:convex": "node scripts/deploy-convex-prod.mjs",
+    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name cime-tools"
+  },
+  "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
+    "convex": "^1.40.0",
+    "lucide-react": "^1.17.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}

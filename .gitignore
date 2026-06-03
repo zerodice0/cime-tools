@@ -1,0 +1,15 @@
+node_modules
+dist
+.dev.vars
+.env.local
+.env.*.local
+.env
+.wrangler
+.playwright-mcp
+.agents
+.codex
+skills-lock.json
+*.log
+clerk-auth-check.png
+convex-clerk-loading.png
+.DS_Store
