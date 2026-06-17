@@ -243,12 +243,7 @@ function buildTestDiscordMessage({
         ...(channelImageUrl ? { thumbnail: { url: channelImageUrl } } : {}),
         fields: [
           {
-            name: "CI.ME 채널",
-            value: channelName,
-            inline: true,
-          },
-          {
-            name: "시작 시간",
+            name: "시작",
             value: displayStartedAt,
             inline: true,
           },

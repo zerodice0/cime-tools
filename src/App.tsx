@@ -887,11 +887,7 @@ function DiscordMessagePreview({
           <b>{previewData.liveTitle}</b>
           <dl>
             <div>
-              <dt>CI.ME 채널</dt>
-              <dd>{previewData.channelName}</dd>
-            </div>
-            <div>
-              <dt>시작 시간</dt>
+              <dt>시작</dt>
               <dd>{previewData.startedAt}</dd>
             </div>
           </dl>
