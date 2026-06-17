@@ -9,6 +9,7 @@
  */
 
 import type * as accounts from "../accounts.js";
+import type * as channelUrl from "../channelUrl.js";
 import type * as cime from "../cime.js";
 import type * as crons from "../crons.js";
 import type * as discord from "../discord.js";
@@ -23,6 +24,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   accounts: typeof accounts;
+  channelUrl: typeof channelUrl;
   cime: typeof cime;
   crons: typeof crons;
   discord: typeof discord;
