@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { formatDiscordDateTime } from "./discordTime";
+import { buildCimeChannelUrl } from "./channelUrl";
 
 type AuthCtx = {
   auth: {
@@ -212,7 +213,7 @@ function buildTestDiscordMessage({
   const startedAt = new Date().toISOString();
   const displayStartedAt = formatDiscordDateTime(startedAt);
   const channelHandle = account?.channelHandle?.replace(/^@/, "");
-  const channelUrl = channelHandle ? `https://ci.me/${channelHandle}` : "";
+  const channelUrl = buildCimeChannelUrl(account?.channelHandle) ?? "";
   const channelName = account?.channelName ?? "내 채널";
   const channelImageUrl = account?.channelImageUrl;
   const content = renderMessageTemplate(

@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { postDiscordWebhook } from "./discord";
 import { formatDiscordDateTime } from "./discordTime";
+import { buildCimeChannelUrl } from "./channelUrl";
 
 const CIME_API_BASE = "https://ci.me/api/openapi";
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -365,7 +366,7 @@ async function sendLiveStartedMessage(
   target: PollTarget,
   liveStatus: LiveStatus,
 ) {
-  const channelUrl = buildChannelUrl(target.account.channelHandle);
+  const channelUrl = buildCimeChannelUrl(target.account.channelHandle);
   const channelImageUrl = target.account.channelImageUrl;
   const displayStartedAt = formatDiscordDateTime(liveStatus.openedAt);
   const content = renderMessageTemplate(
@@ -406,7 +407,7 @@ async function sendLiveStartedMessage(
 }
 
 async function sendStalePausedMessage(target: PollTarget) {
-  const channelUrl = buildChannelUrl(target.account.channelHandle);
+  const channelUrl = buildCimeChannelUrl(target.account.channelHandle);
   return await postDiscordWebhook(target.webhook.webhookUrl, {
     content: renderMessageTemplate(
       target.webhook.staleMessageTemplate ?? DEFAULT_STALE_MESSAGE_TEMPLATE,
@@ -415,13 +416,6 @@ async function sendStalePausedMessage(target: PollTarget) {
       channelUrl,
     ),
   });
-}
-
-function buildChannelUrl(handle?: string) {
-  if (!handle) {
-    return undefined;
-  }
-  return `https://ci.me/${handle.replace(/^@/, "")}`;
 }
 
 function renderMessageTemplate(

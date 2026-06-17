@@ -1203,10 +1203,18 @@ function getPreviewData(account?: LinkedCimeAccount | null): MessagePreviewData 
   return {
     channelName: account?.channelName || "내 채널",
     channelHandle,
-    channelUrl: `https://ci.me/${channelHandle}`,
+    channelUrl: buildCimeChannelUrl(channelHandle) ?? "",
     liveTitle: "오늘의 라이브",
     startedAt: formatDiscordDateTime("2026-06-03T12:00:00+09:00"),
   };
+}
+
+function buildCimeChannelUrl(handle?: string | null) {
+  const normalizedHandle = handle?.trim().replace(/^@+/, "");
+  if (!normalizedHandle) {
+    return undefined;
+  }
+  return `https://ci.me/@${normalizedHandle}/live`;
 }
 
 function renderMessageTemplate(template: string, data: MessagePreviewData) {
