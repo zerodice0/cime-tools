@@ -1,6 +1,7 @@
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
+import { normalizeWatchLinks, watchLinksValidator } from "./watchLinks";
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const MAX_MESSAGE_TEMPLATE_LENGTH = 280;
@@ -256,6 +257,7 @@ export const upsertDiscordWebhook = internalMutation({
     name: v.optional(v.string()),
     liveMessageTemplate: v.optional(v.string()),
     staleMessageTemplate: v.optional(v.string()),
+    watchLinks: v.optional(watchLinksValidator),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -265,6 +267,7 @@ export const upsertDiscordWebhook = internalMutation({
     const staleMessageTemplate = normalizeMessageTemplate(
       args.staleMessageTemplate,
     );
+    const watchLinks = normalizeWatchLinks(args.watchLinks);
     const current = await ctx.db
       .query("discordWebhooks")
       .withIndex("byOwner", (q) => q.eq("ownerId", args.ownerId))
@@ -281,6 +284,7 @@ export const upsertDiscordWebhook = internalMutation({
         name: args.name,
         liveMessageTemplate,
         staleMessageTemplate,
+        watchLinks: watchLinks.length > 0 ? watchLinks : undefined,
         enabled: true,
         updatedAt: now,
       });
@@ -294,6 +298,7 @@ export const upsertDiscordWebhook = internalMutation({
         name: args.name,
         liveMessageTemplate,
         staleMessageTemplate,
+        watchLinks: watchLinks.length > 0 ? watchLinks : undefined,
         enabled: true,
         createdAt: now,
         updatedAt: now,
@@ -321,6 +326,7 @@ export const updateDiscordNotificationSettings = mutation({
   args: {
     liveMessageTemplate: v.string(),
     staleMessageTemplate: v.string(),
+    watchLinks: watchLinksValidator,
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwnerId(ctx);
@@ -336,6 +342,7 @@ export const updateDiscordNotificationSettings = mutation({
     await ctx.db.patch(webhook._id, {
       liveMessageTemplate: normalizeMessageTemplate(args.liveMessageTemplate),
       staleMessageTemplate: normalizeMessageTemplate(args.staleMessageTemplate),
+      watchLinks: normalizeWatchLinks(args.watchLinks),
       updatedAt: Date.now(),
     });
   },

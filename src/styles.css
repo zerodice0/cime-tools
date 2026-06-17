@@ -848,6 +848,7 @@ h2 {
 .webhook-settings,
 .notification-template-form,
 .template-fields,
+.watch-link-editor,
 .discord-preview {
   display: grid;
   gap: 14px;
@@ -888,6 +889,64 @@ h2 {
   background: rgba(255, 255, 255, 0.07);
   font-size: 12px;
   font-weight: 800;
+}
+
+.watch-link-editor {
+  padding-top: 2px;
+}
+
+.watch-link-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.watch-link-header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.watch-link-header h3 {
+  margin: 0;
+  color: var(--cime-muted-strong);
+  font-size: 13px;
+}
+
+.watch-link-header span,
+.watch-link-grid-head {
+  color: var(--cime-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.watch-link-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.watch-link-grid-head,
+.watch-link-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.watch-link-row .icon-button {
+  width: 42px;
+  min-height: 42px;
+}
+
+.watch-link-empty {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  color: var(--cime-muted);
+  font-size: 13px;
+  font-weight: 750;
 }
 
 .discord-preview {
@@ -977,6 +1036,15 @@ h2 {
   color: var(--cime-muted-strong);
   font-size: 12px;
   font-weight: 800;
+}
+
+.watch-link-preview a {
+  color: #47a3ff;
+  text-decoration: none;
+}
+
+.watch-link-preview a:hover {
+  text-decoration: underline;
 }
 
 .preview-trigger-copy {
@@ -1395,6 +1463,18 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .watch-link-grid-head {
+    display: none;
+  }
+
+  .watch-link-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .watch-link-row input:first-child {
+    grid-column: 1 / -1;
+  }
+
   .secret-input-row {
     grid-template-columns: minmax(0, 1fr) auto;
   }
@@ -1435,6 +1515,7 @@ textarea:focus {
 
   .panel-header,
   .panel-actions,
+  .watch-link-header,
   .form-action-row,
   .guide-modal-actions {
     align-items: stretch;
@@ -1442,6 +1523,7 @@ textarea:focus {
   }
 
   .panel-actions,
+  .watch-link-header,
   .form-action-row,
   .guide-modal-actions {
     width: 100%;

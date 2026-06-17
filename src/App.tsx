@@ -16,6 +16,7 @@ import {
   LinkIcon,
   LogOut,
   PauseCircle,
+  Plus,
   Radio,
   RefreshCw,
   Save,
@@ -64,10 +65,20 @@ type LinkedCimeAccount = {
   channelImageUrl?: string;
 };
 
+type WatchLink = {
+  label: string;
+  url: string;
+};
+
+type WatchLinkDraft = WatchLink & {
+  id: string;
+};
+
 const DEFAULT_LIVE_MESSAGE_TEMPLATE =
   "{channelName} 라이브가 시작되었습니다.";
 const DEFAULT_STALE_MESSAGE_TEMPLATE =
   "{channelName} 채널이 30일 이상 오프라인 상태라 라이브 알림을 일시 중지했습니다. 대시보드에서 다시 요청하면 재개됩니다.";
+const MAX_WATCH_LINKS = 8;
 const MESSAGE_TEMPLATE_VARIABLES = [
   "{channelName}",
   "{channelHandle}",
@@ -351,6 +362,7 @@ function Dashboard({
   const [staleMessageTemplate, setStaleMessageTemplate] = useState(
     DEFAULT_STALE_MESSAGE_TEMPLATE,
   );
+  const [watchLinks, setWatchLinks] = useState<WatchLinkDraft[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [discordActionNotice, setDiscordActionNotice] = useState<Notice | null>(null);
@@ -359,8 +371,8 @@ function Dashboard({
 
   const monitorState = useMemo(() => getMonitorState(setup), [setup]);
   const previewData = useMemo(
-    () => getPreviewData(setup?.account),
-    [setup?.account],
+    () => getPreviewData(setup?.account, toWatchLinksPayload(watchLinks)),
+    [setup?.account, watchLinks],
   );
 
   useEffect(() => {
@@ -373,10 +385,12 @@ function Dashboard({
     setStaleMessageTemplate(
       setup.webhook.staleMessageTemplate ?? DEFAULT_STALE_MESSAGE_TEMPLATE,
     );
+    setWatchLinks(toWatchLinkDrafts(setup.webhook.watchLinks));
   }, [
     setup?.webhook?._id,
     setup?.webhook?.liveMessageTemplate,
     setup?.webhook?.staleMessageTemplate,
+    setup?.webhook?.watchLinks,
   ]);
 
   async function startCimeLink() {
@@ -401,6 +415,33 @@ function Dashboard({
     setDiscordActionNotice(null);
   }
 
+  function addWatchLink() {
+    setWatchLinks((current) =>
+      current.length >= MAX_WATCH_LINKS
+        ? current
+        : [...current, createWatchLinkDraft()],
+    );
+    setDiscordActionNotice(null);
+  }
+
+  function updateWatchLink(
+    id: string,
+    field: "label" | "url",
+    value: string,
+  ) {
+    setWatchLinks((current) =>
+      current.map((link) =>
+        link.id === id ? { ...link, [field]: value } : link,
+      ),
+    );
+    setDiscordActionNotice(null);
+  }
+
+  function removeWatchLink(id: string) {
+    setWatchLinks((current) => current.filter((link) => link.id !== id));
+    setDiscordActionNotice(null);
+  }
+
   async function submitDiscordWebhook(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy("discord");
@@ -414,6 +455,7 @@ function Dashboard({
         webhookUrl,
         liveMessageTemplate,
         staleMessageTemplate,
+        watchLinks: toWatchLinksPayload(watchLinks),
       });
       setWebhookUrl("");
       setWebhookVisible(false);
@@ -445,6 +487,7 @@ function Dashboard({
       const result = await testDiscordWebhook({
         webhookUrl: setup?.webhook ? undefined : webhookUrl,
         liveMessageTemplate,
+        watchLinks: toWatchLinksPayload(watchLinks),
       });
       const successNotice = {
         type: "success",
@@ -475,6 +518,7 @@ function Dashboard({
       await updateDiscordNotificationSettings({
         liveMessageTemplate,
         staleMessageTemplate,
+        watchLinks: toWatchLinksPayload(watchLinks),
       });
       const successNotice = {
         type: "success",
@@ -586,6 +630,12 @@ function Dashboard({
                     onLiveChange={updateLiveMessageTemplate}
                     onStaleChange={updateStaleMessageTemplate}
                   />
+                  <WatchLinkEditor
+                    links={watchLinks}
+                    onAdd={addWatchLink}
+                    onChange={updateWatchLink}
+                    onRemove={removeWatchLink}
+                  />
                   <DiscordMessagePreview
                     liveMessageTemplate={liveMessageTemplate}
                     staleMessageTemplate={staleMessageTemplate}
@@ -654,6 +704,12 @@ function Dashboard({
                   staleMessageTemplate={staleMessageTemplate}
                   onLiveChange={updateLiveMessageTemplate}
                   onStaleChange={updateStaleMessageTemplate}
+                />
+                <WatchLinkEditor
+                  links={watchLinks}
+                  onAdd={addWatchLink}
+                  onChange={updateWatchLink}
+                  onRemove={removeWatchLink}
                 />
                 <DiscordMessagePreview
                   liveMessageTemplate={liveMessageTemplate}
@@ -864,6 +920,83 @@ function MessageTemplateFields({
   );
 }
 
+function WatchLinkEditor({
+  links,
+  onAdd,
+  onChange,
+  onRemove,
+}: {
+  links: WatchLinkDraft[];
+  onAdd: () => void;
+  onChange: (id: string, field: "label" | "url", value: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <section className="watch-link-editor" aria-labelledby="watch-link-title">
+      <div className="watch-link-header">
+        <div>
+          <h3 id="watch-link-title">추가 시청 링크</h3>
+          <span>{links.length}/{MAX_WATCH_LINKS}</span>
+        </div>
+        <button
+          className="secondary-button compact"
+          type="button"
+          disabled={links.length >= MAX_WATCH_LINKS}
+          onClick={onAdd}
+        >
+          <Plus size={17} />
+          링크 추가
+        </button>
+      </div>
+      <div className="watch-link-grid" role="group" aria-label="추가 시청 링크">
+        <div className="watch-link-grid-head" aria-hidden="true">
+          <span>플랫폼 명</span>
+          <span>주소</span>
+          <span />
+        </div>
+        {links.length > 0 ? (
+          links.map((link) => (
+            <div className="watch-link-row" key={link.id}>
+              <input
+                type="text"
+                value={link.label}
+                maxLength={20}
+                placeholder="치지직"
+                aria-label="플랫폼 명"
+                onChange={(event) =>
+                  onChange(link.id, "label", event.target.value)
+                }
+              />
+              <input
+                type="url"
+                value={link.url}
+                maxLength={512}
+                placeholder="https://..."
+                aria-label="주소"
+                spellCheck={false}
+                onChange={(event) =>
+                  onChange(link.id, "url", event.target.value)
+                }
+              />
+              <button
+                className="icon-button danger"
+                type="button"
+                title="시청 링크 삭제"
+                aria-label="시청 링크 삭제"
+                onClick={() => onRemove(link.id)}
+              >
+                <Trash2 size={17} />
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="watch-link-empty">추가된 링크 없음</div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function DiscordMessagePreview({
   liveMessageTemplate,
   staleMessageTemplate,
@@ -873,6 +1006,8 @@ function DiscordMessagePreview({
   staleMessageTemplate: string;
   previewData: MessagePreviewData;
 }) {
+  const previewWatchLinks = getPreviewWatchLinks(previewData);
+
   return (
     <div className="discord-preview">
       <div className="preview-header">
@@ -886,6 +1021,21 @@ function DiscordMessagePreview({
         <div className="discord-embed">
           <b>{previewData.liveTitle}</b>
           <dl>
+            {previewWatchLinks.length > 0 ? (
+              <div>
+                <dt>시청하러 가기</dt>
+                <dd className="watch-link-preview">
+                  {previewWatchLinks.map((link, index) => (
+                    <span key={`${link.label}-${link.url}`}>
+                      {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                      <a href={link.url} target="_blank" rel="noreferrer">
+                        {link.label}
+                      </a>
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt>시작</dt>
               <dd>{previewData.startedAt}</dd>
@@ -1190,18 +1340,25 @@ type MessagePreviewData = {
   channelName: string;
   channelHandle: string;
   channelUrl: string;
+  hasAccount: boolean;
   liveTitle: string;
   startedAt: string;
+  watchLinks: WatchLink[];
 };
 
-function getPreviewData(account?: LinkedCimeAccount | null): MessagePreviewData {
+function getPreviewData(
+  account: LinkedCimeAccount | null | undefined,
+  watchLinks: WatchLink[],
+): MessagePreviewData {
   const channelHandle = account?.channelHandle?.replace(/^@/, "") || "my-channel";
   return {
     channelName: account?.channelName || "내 채널",
     channelHandle,
     channelUrl: buildCimeChannelUrl(channelHandle) ?? "",
+    hasAccount: Boolean(account),
     liveTitle: "오늘의 라이브",
     startedAt: formatDiscordDateTime("2026-06-03T12:00:00+09:00"),
+    watchLinks,
   };
 }
 
@@ -1226,6 +1383,57 @@ function renderMessageTemplate(template: string, data: MessagePreviewData) {
     /\{(channelName|channelHandle|channelUrl|liveTitle|startedAt)\}/g,
     (_, key: string) => values[key] ?? "",
   );
+}
+
+function createWatchLinkDraft(link?: WatchLink): WatchLinkDraft {
+  return {
+    id: createDraftId(),
+    label: link?.label ?? "",
+    url: link?.url ?? "",
+  };
+}
+
+function createDraftId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function toWatchLinkDrafts(links?: WatchLink[] | null) {
+  return (links ?? []).map((link) => createWatchLinkDraft(link));
+}
+
+function toWatchLinksPayload(links: WatchLinkDraft[]) {
+  return links
+    .map((link) => ({
+      label: link.label.trim(),
+      url: link.url.trim(),
+    }))
+    .filter((link) => link.label || link.url);
+}
+
+function getPreviewWatchLinks(data: MessagePreviewData) {
+  const extraLinks = data.watchLinks.filter(
+    (link) => link.label && isValidHttpsUrl(link.url),
+  );
+  if (extraLinks.length === 0) {
+    return [];
+  }
+  const cimeLink =
+    data.hasAccount && data.channelUrl
+      ? [{ label: "씨미", url: data.channelUrl }]
+      : [];
+  return [...cimeLink, ...extraLinks];
+}
+
+function isValidHttpsUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function PanelHeader({

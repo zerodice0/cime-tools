@@ -33,6 +33,14 @@ export default defineSchema({
     name: v.optional(v.string()),
     liveMessageTemplate: v.optional(v.string()),
     staleMessageTemplate: v.optional(v.string()),
+    watchLinks: v.optional(
+      v.array(
+        v.object({
+          label: v.string(),
+          url: v.string(),
+        }),
+      ),
+    ),
     enabled: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),

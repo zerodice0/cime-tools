@@ -5,6 +5,7 @@ import type { Doc } from "./_generated/dataModel";
 import { postDiscordWebhook } from "./discord";
 import { formatDiscordDateTime } from "./discordTime";
 import { buildCimeChannelUrl } from "./channelUrl";
+import { buildWatchLinksMarkdown } from "./watchLinks";
 
 const CIME_API_BASE = "https://ci.me/api/openapi";
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -369,6 +370,10 @@ async function sendLiveStartedMessage(
   const channelUrl = buildCimeChannelUrl(target.account.channelHandle);
   const channelImageUrl = target.account.channelImageUrl;
   const displayStartedAt = formatDiscordDateTime(liveStatus.openedAt);
+  const watchLinksMarkdown = buildWatchLinksMarkdown(
+    channelUrl,
+    target.webhook.watchLinks,
+  );
   const content = renderMessageTemplate(
     target.webhook.liveMessageTemplate ?? DEFAULT_LIVE_MESSAGE_TEMPLATE,
     target,
@@ -390,6 +395,15 @@ async function sendLiveStartedMessage(
         color: 0xe5484d,
         ...(channelImageUrl ? { thumbnail: { url: channelImageUrl } } : {}),
         fields: [
+          ...(watchLinksMarkdown
+            ? [
+                {
+                  name: "시청하러 가기",
+                  value: watchLinksMarkdown,
+                  inline: false,
+                },
+              ]
+            : []),
           {
             name: "시작",
             value: displayStartedAt,

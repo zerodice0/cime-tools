@@ -15,6 +15,7 @@ import type * as crons from "../crons.js";
 import type * as discord from "../discord.js";
 import type * as discordTime from "../discordTime.js";
 import type * as polling from "../polling.js";
+import type * as watchLinks from "../watchLinks.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   discord: typeof discord;
   discordTime: typeof discordTime;
   polling: typeof polling;
+  watchLinks: typeof watchLinks;
 }>;
 
 /**

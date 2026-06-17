@@ -4,6 +4,12 @@ import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { formatDiscordDateTime } from "./discordTime";
 import { buildCimeChannelUrl } from "./channelUrl";
+import {
+  buildWatchLinksMarkdown,
+  normalizeWatchLinks,
+  type WatchLink,
+  watchLinksValidator,
+} from "./watchLinks";
 
 type AuthCtx = {
   auth: {
@@ -41,6 +47,7 @@ export const saveWebhook = action({
     webhookUrl: v.string(),
     liveMessageTemplate: v.optional(v.string()),
     staleMessageTemplate: v.optional(v.string()),
+    watchLinks: v.optional(watchLinksValidator),
   },
   handler: async (ctx, args): Promise<{ ok: true }> => {
     const ownerId = await requireOwnerId(ctx);
@@ -56,6 +63,7 @@ export const saveWebhook = action({
       name: metadata.name,
       liveMessageTemplate: args.liveMessageTemplate,
       staleMessageTemplate: args.staleMessageTemplate,
+      watchLinks: args.watchLinks,
     });
     return { ok: true };
   },
@@ -65,6 +73,7 @@ export const testWebhook = action({
   args: {
     webhookUrl: v.optional(v.string()),
     liveMessageTemplate: v.optional(v.string()),
+    watchLinks: v.optional(watchLinksValidator),
   },
   handler: async (
     ctx,
@@ -102,6 +111,9 @@ export const testWebhook = action({
       webhookUrl,
       buildTestDiscordMessage({
         account: savedTarget.account,
+        watchLinks:
+          args.watchLinks ??
+          (savedTarget.webhook?.watchLinks as WatchLink[] | undefined),
         liveMessageTemplate: args.liveMessageTemplate,
       }),
     );
@@ -205,9 +217,11 @@ async function fetchDiscordWebhookMetadata(
 
 function buildTestDiscordMessage({
   account,
+  watchLinks,
   liveMessageTemplate,
 }: {
   account: Doc<"cimeAccounts"> | null;
+  watchLinks?: WatchLink[];
   liveMessageTemplate?: string;
 }) {
   const startedAt = new Date().toISOString();
@@ -216,6 +230,10 @@ function buildTestDiscordMessage({
   const channelUrl = buildCimeChannelUrl(account?.channelHandle) ?? "";
   const channelName = account?.channelName ?? "내 채널";
   const channelImageUrl = account?.channelImageUrl;
+  const watchLinksMarkdown = buildWatchLinksMarkdown(
+    channelUrl,
+    normalizeWatchLinks(watchLinks),
+  );
   const content = renderMessageTemplate(
     normalizeMessageTemplate(liveMessageTemplate) ?? DEFAULT_LIVE_MESSAGE_TEMPLATE,
     {
@@ -242,6 +260,15 @@ function buildTestDiscordMessage({
         color: 0x7c4dff,
         ...(channelImageUrl ? { thumbnail: { url: channelImageUrl } } : {}),
         fields: [
+          ...(watchLinksMarkdown
+            ? [
+                {
+                  name: "시청하러 가기",
+                  value: watchLinksMarkdown,
+                  inline: false,
+                },
+              ]
+            : []),
           {
             name: "시작",
             value: displayStartedAt,
